@@ -54,10 +54,23 @@ const createSlotIndex = ref(1)
 // 角色槽位（最多2个）
 const roleSlots = computed(() => {
   const slots: (Role | null)[] = [null, null]
+  
+  // 增加对空数组的保护
+  if (!gameStore.roleList) return slots;
+
   gameStore.roleList.forEach((role) => {
-    // 假设角色有slot_index属性，或者按顺序分配
-    const index = role.role_id % 2
-    slots[index] = role
+    // 1. [关键修复] 检查 role 是否为 null
+    if (role) {
+      // 2. [关键修复] 使用 role.slot 字段 (后端已提供 1 或 2)，注意数组下标是 0 和 1
+      // 如果后端传回的 slot 可能是字符串，建议转一下类型: Number(role.slot)
+      // 如果你的 Role 接口没有定义 slot，可能需要临时加一下或者用 any
+      const slotIndex = (role as any).slot ? (role as any).slot - 1 : 0;
+      
+      // 只有当下标合法时才赋值
+      if (slotIndex >= 0 && slotIndex < slots.length) {
+        slots[slotIndex] = role
+      }
+    }
   })
   return slots
 })
