@@ -1,0 +1,137 @@
+/* Vue Game Main Styles */
+:root {
+  /* 核心色板 */
+  --bg-dark: #0a0b10;
+  --bg-panel: #16181d;
+  --accent-gold: #c5a059;
+  --accent-gold-dim: #8a703e;
+  --accent-red: #8a1c1c;
+  --accent-blue: #1c4e8a;
+  --accent-green: #2d6b36;
+
+  /* 文字颜色 */
+  --text-main: #e0e0e0;
+  --text-muted: #8b9bb4;
+
+  /* 边框与阴影 */
+  --border-color: #3e4452;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-dark);
+  background-image: radial-gradient(circle at center, #1a1c24 0%, #050505 100%);
+  color: var(--text-main);
+  font-family: 'Cinzel', 'Trajan Pro', 'Segoe UI', serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+/* 按钮通用样式 */
+.btn {
+  background: linear-gradient(180deg, #2c313c 0%, #1a1d24 100%);
+  border: 1px solid var(--accent-gold-dim);
+  color: var(--accent-gold);
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: bold;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  min-width: 100px;
+}
+
+.btn:hover:not(:disabled) {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 15px rgba(197, 160, 89, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(100%);
+}
+
+.btn-danger {
+  border-color: #8a1c1c;
+  color: #ff6b6b;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #8a1c1c;
+  color: #fff;
+}
+
+/* 输入框样式 */
+input[type="text"],
+input[type="password"],
+input[type="email"] {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-color);
+  color: var(--accent-gold);
+  padding: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  transition: 0.3s;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 10px rgba(197, 160, 89, 0.3);
+}
+
+/* 链接样式 */
+a {
+  color: var(--accent-gold);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+a:hover {
+  color: var(--accent-gold-dim);
+}
+
+/* 工具类 */
+.text-center {
+  text-align: center;
+}
+
+.mt-1 {
+  margin-top: 0.5rem;
+}
+
+.mt-2 {
+  margin-top: 1rem;
+}
+
+.mb-1 {
+  margin-bottom: 0.5rem;
+}
+
+.mb-2 {
+  margin-bottom: 1rem;
+}

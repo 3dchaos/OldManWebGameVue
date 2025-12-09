@@ -1,0 +1,146 @@
+<template>
+  <div class="game-view">
+    <div class="game-container">
+      <!-- 左侧边栏 -->
+      <div class="game-sidebar left-sidebar">
+        <CharacterCard />
+        <ActionMenu @show-attribute="showAttributePanel = true" />
+      </div>
+
+      <!-- 游戏主区域 -->
+      <div class="game-stage">
+        <StageHeader />
+        <MainDisplay />
+        <CombatLog />
+      </div>
+
+      <!-- 右侧边栏 -->
+      <div class="game-sidebar right-sidebar">
+        <MapNavigation />
+        <ControlPanel />
+      </div>
+    </div>
+
+    <!-- 角色属性面板 -->
+    <RoleAttributePanel v-if="showAttributePanel" @close="showAttributePanel = false" />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { useGameStore } from '@/stores/game'
+import { socketService } from '@/services/socket'
+import CharacterCard from '@/components/game/CharacterCard.vue'
+import ActionMenu from '@/components/game/ActionMenu.vue'
+import StageHeader from '@/components/game/StageHeader.vue'
+import MainDisplay from '@/components/game/MainDisplay.vue'
+import CombatLog from '@/components/game/CombatLog.vue'
+import MapNavigation from '@/components/game/MapNavigation.vue'
+import ControlPanel from '@/components/game/ControlPanel.vue'
+import RoleAttributePanel from '@/components/game/RoleAttributePanel.vue'
+
+const gameStore = useGameStore()
+
+const showAttributePanel = ref(false)
+
+// 通过事件总线或直接操作来控制属性面板显示
+// 这里可以通过 provide/inject 或者 store 来管理
+function toggleAttributePanel() {
+  showAttributePanel.value = !showAttributePanel.value
+}
+
+onMounted(() => {
+  // 检查角色状态，如果没有角色则切换到角色选择视图
+  if (!gameStore.currentRole || !gameStore.currentRoleId) {
+    gameStore.setView('select-role')
+    return
+  }
+
+  // 确保连接
+  if (!socketService.connected) {
+    socketService.connect()
+  }
+
+  // 请求角色数据和地图数据
+  socketService.emit('rolecontrol', {
+    type: 'getRoleData',
+    roleId: gameStore.currentRoleId,
+  })
+
+  socketService.emit('rolecontrol', {
+    type: 'getCurrentMapData',
+    roleId: gameStore.currentRoleId,
+  })
+
+  // 监听数据更新
+  socketService.on('rolecontrol', (data: any) => {
+    if (data.type === 'roleDataUpdate') {
+      // 数据已自动更新到store
+    }
+  })
+})
+
+// 监听视图变化
+watch(() => gameStore.currentView, (newView) => {
+  if (newView !== 'game') {
+    // 视图切换时，可以在这里清理资源
+  }
+})
+
+onUnmounted(() => {
+  // 清理
+})
+</script>
+
+<style scoped>
+.game-view {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%);
+  padding: 20px;
+}
+
+.game-container {
+  display: grid;
+  grid-template-columns: 280px 1fr 280px;
+  gap: 20px;
+  max-width: 1800px;
+  margin: 0 auto;
+  min-height: calc(100vh - 40px);
+}
+
+.game-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.game-stage {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel);
+  border: 1px solid #333;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+@media (max-width: 1400px) {
+  .game-container {
+    grid-template-columns: 250px 1fr 250px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .game-container {
+    grid-template-columns: 1fr;
+  }
+
+  .game-sidebar {
+    order: 2;
+  }
+
+  .game-stage {
+    order: 1;
+  }
+}
+</style>
+
