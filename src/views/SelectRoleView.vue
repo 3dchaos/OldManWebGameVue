@@ -36,14 +36,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useGameStore } from '@/stores/game'
 import { socketService } from '@/services/socket'
+import { useRouter } from 'vue-router'
 import RoleCard from '@/components/RoleCard.vue'
 import CreateRolePanel from '@/components/CreateRolePanel.vue'
 import type { Role } from '@/stores/game'
 
 const gameStore = useGameStore()
+const router = useRouter()
 
 const selectedRoleId = ref<number | null>(null)
 const showCreatePanel = ref(false)
@@ -63,7 +65,7 @@ const roleSlots = computed(() => {
 onMounted(() => {
   // 检查登录状态，如果未登录则切换到登录视图
   if (!gameStore.username || !gameStore.isLoggedIn) {
-    gameStore.setView('login')
+    router.push({ name: 'login' })
     return
   }
 
@@ -80,13 +82,6 @@ onMounted(() => {
 
   // 监听角色控制响应
   socketService.on('rolecontrol', handleRoleControlResponse)
-})
-
-// 监听视图变化，如果切换到其他视图，清理监听
-watch(() => gameStore.currentView, (newView) => {
-  if (newView !== 'select-role') {
-    // 视图切换时，可以在这里清理资源
-  }
 })
 
 function loadRoleList() {
@@ -115,7 +110,7 @@ function handleResponse(data: any) {
     // 如果登录失败（可能是密码错误），跳转到登录页
     if (!data.success && data.content) {
       alert(data.content)
-      router.push('/')
+      router.push({ name: 'login' })
     }
   }
 }
@@ -149,7 +144,7 @@ function handleRoleControlResponse(data: any) {
   } else if (data.type === 'loginRole') {
     if (data.success && data.roleData) {
       gameStore.setCurrentRole(data.roleData)
-      gameStore.setView('game')
+      router.push({ name: 'game' })
     } else {
       alert(data.content || '进入游戏失败')
     }
@@ -195,7 +190,7 @@ function handleStartGame() {
 function handleLogout() {
   socketService.emit('message', { type: 'logout' })
   gameStore.reset()
-  gameStore.setView('login')
+  router.push({ name: 'login' })
 }
 
 function handleRoleCreated() {

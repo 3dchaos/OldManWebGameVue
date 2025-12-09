@@ -27,9 +27,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useGameStore } from '@/stores/game'
 import { socketService } from '@/services/socket'
+import { useRouter } from 'vue-router'
 import CharacterCard from '@/components/game/CharacterCard.vue'
 import ActionMenu from '@/components/game/ActionMenu.vue'
 import StageHeader from '@/components/game/StageHeader.vue'
@@ -40,6 +41,7 @@ import ControlPanel from '@/components/game/ControlPanel.vue'
 import RoleAttributePanel from '@/components/game/RoleAttributePanel.vue'
 
 const gameStore = useGameStore()
+const router = useRouter()
 
 const showAttributePanel = ref(false)
 
@@ -52,7 +54,7 @@ function toggleAttributePanel() {
 onMounted(() => {
   // 检查角色状态，如果没有角色则切换到角色选择视图
   if (!gameStore.currentRole || !gameStore.currentRoleId) {
-    gameStore.setView('select-role')
+    router.push({ name: 'select-role' })
     return
   }
 
@@ -78,13 +80,6 @@ onMounted(() => {
       // 数据已自动更新到store
     }
   })
-})
-
-// 监听视图变化
-watch(() => gameStore.currentView, (newView) => {
-  if (newView !== 'game') {
-    // 视图切换时，可以在这里清理资源
-  }
 })
 
 onUnmounted(() => {

@@ -56,13 +56,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useGameStore } from '@/stores/game'
 import { socketService } from '@/services/socket'
 import { useRouter } from 'vue-router'
-import { onUnmounted } from 'vue'
 
 const gameStore = useGameStore()
+const router = useRouter()
 
 const account = ref('')
 const password = ref('')
@@ -107,10 +107,7 @@ function handleServerResponse(data: any) {
       gameStore.setLoggedIn(true, account.value)
       gameStore.setRoleList(data.roleList)
       
-      // 切换到角色选择视图
-      // 修改后
-      const router = useRouter()
-      // 在登录成功的回调里：
+      // 使用路由跳转到角色选择视图
       router.push({ name: 'select-role' })
     } else {
       alert(data.content || '登录失败')

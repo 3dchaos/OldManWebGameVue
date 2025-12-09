@@ -9,8 +9,10 @@
 <script setup lang="ts">
 import { useGameStore } from '@/stores/game'
 import { socketService } from '@/services/socket'
+import { useRouter } from 'vue-router'
 
 const gameStore = useGameStore()
+const router = useRouter()
 
 function handleLogout() {
   if (!gameStore.currentRoleId) return
@@ -27,7 +29,7 @@ function handleLogout() {
   // 监听退出成功
   socketService.on('rolecontrol', (data: any) => {
     if (data.type === 'logoutRole' && data.success) {
-      gameStore.setView('select-role')
+      router.push({ name: 'select-role' })
     }
   })
 }
