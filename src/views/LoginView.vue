@@ -59,6 +59,8 @@
 import { ref, onMounted } from 'vue'
 import { useGameStore } from '@/stores/game'
 import { socketService } from '@/services/socket'
+import { useRouter } from 'vue-router'
+import { onUnmounted } from 'vue'
 
 const gameStore = useGameStore()
 
@@ -69,6 +71,12 @@ const isRegisterMode = ref(false)
 const loading = ref(false)
 const version = ref('v1.0.1')
 const gameName = ref('老登传奇')
+
+
+onUnmounted(() => {
+  // 需要在 socketService 中实现 off 方法，或者保存 callback 引用
+  socketService.off('response', handleServerResponse)
+})
 
 onMounted(async () => {
   // 获取游戏配置
@@ -100,7 +108,10 @@ function handleServerResponse(data: any) {
       gameStore.setRoleList(data.roleList)
       
       // 切换到角色选择视图
-      gameStore.setView('select-role')
+      // 修改后
+      const router = useRouter()
+      // 在登录成功的回调里：
+      router.push({ name: 'select-role' })
     } else {
       alert(data.content || '登录失败')
     }

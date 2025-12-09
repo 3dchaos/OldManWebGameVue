@@ -47,8 +47,6 @@ export const useGameStore = defineStore('game', () => {
   const currentRole = ref<Role | null>(null)
   const currentRoleId = ref<number | null>(null)
 
-  // 当前视图状态：'login' | 'select-role' | 'game' | 'admin'
-  const currentView = ref<'login' | 'select-role' | 'game' | 'admin'>('login')
 
   // 地图数据
   const currentMap = ref<MapData | null>(null)
@@ -144,9 +142,6 @@ export const useGameStore = defineStore('game', () => {
     gameLogs.value = []
   }
 
-  function setView(view: 'login' | 'select-role' | 'game' | 'admin') {
-    currentView.value = view
-  }
 
   function reset() {
     isLoggedIn.value = false
@@ -161,7 +156,6 @@ export const useGameStore = defineStore('game', () => {
     transferTime.value = 0
     transferMapId.value = null
     gameLogs.value = []
-    currentView.value = 'login'
   }
 
   return {
@@ -180,7 +174,6 @@ export const useGameStore = defineStore('game', () => {
     transferTime,
     transferMapId,
     gameLogs,
-    currentView,
     // Computed
     selectedRole,
     hpPercentage,
@@ -196,7 +189,6 @@ export const useGameStore = defineStore('game', () => {
     setTransferStatus,
     addGameLog,
     clearGameLogs,
-    setView,
     reset,
   }
 })
