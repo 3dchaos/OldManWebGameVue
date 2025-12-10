@@ -18,7 +18,7 @@
         <label>HP</label>
         <ProgressBar
           :percentage="gameStore.hpPercentage"
-          :text="`${gameStore.currentRole.hp}/${gameStore.currentRole.max_hp}`"
+          :text="`${Math.floor(gameStore.currentRole.hp)}/${gameStore.maxHp}`"
           type="hp"
         />
       </div>
@@ -26,7 +26,7 @@
         <label>MP</label>
         <ProgressBar
           :percentage="gameStore.mpPercentage"
-          :text="`${gameStore.currentRole.mp}/${gameStore.currentRole.max_mp}`"
+          :text="`${Math.floor(gameStore.currentRole.mp)}/${gameStore.maxMp}`"
           type="mp"
         />
       </div>
@@ -114,4 +114,3 @@ const avatarImage = computed(() => {
   margin-bottom: 5px;
 }
 </style>
-

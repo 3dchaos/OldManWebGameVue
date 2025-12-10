@@ -23,11 +23,33 @@ const currentMapType = computed(() => {
   const isSafeMap = gameStore.currentMap?.is_safe
   const isRoleSafe = gameStore.currentRole?._temp_inMapSafe
   
-  // 只要任意一个指示安全，就认为是安全区
-  if (isSafeMap || isRoleSafe) {
-    return '安全区'
+  // 判断逻辑：
+  // 1. 优先使用 currentMap 的 is_safe 字段
+  // 2. 如果没有，使用角色数据中的 _temp_inMapSafe
+  // 3. 兼容数字类型 (0/1) 和布尔类型
+  let isSafe = false
+  
+  if (isSafeMap !== undefined && isSafeMap !== null) {
+    // currentMap 有 is_safe 字段
+    if (typeof isSafeMap === 'boolean') {
+      isSafe = isSafeMap
+    } else if (typeof isSafeMap === 'number') {
+      isSafe = isSafeMap === 1
+    } else if (typeof isSafeMap === 'string') {
+      isSafe = isSafeMap === '1' || isSafeMap === 'true'
+    }
+  } else if (isRoleSafe !== undefined && isRoleSafe !== null) {
+    // 使用角色数据中的 _temp_inMapSafe
+    if (typeof isRoleSafe === 'boolean') {
+      isSafe = isRoleSafe
+    } else if (typeof isRoleSafe === 'number') {
+      isSafe = isRoleSafe === 1
+    } else if (typeof isRoleSafe === 'string') {
+      isSafe = isRoleSafe === '1' || isRoleSafe === 'true'
+    }
   }
-  return '危险区'
+  
+  return isSafe ? '安全区' : '危险区'
 })
 
 const mapTypeClass = computed(() => {

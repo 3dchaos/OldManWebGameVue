@@ -10,18 +10,21 @@
           <div class="attr-row"><span class="attr-label">姓名:</span><span class="attr-value">{{ gameStore.currentRole.role_name }}</span></div>
           <div class="attr-row"><span class="attr-label">职业:</span><span class="attr-value">{{ gameStore.currentRole.role_class }}</span></div>
           <div class="attr-row"><span class="attr-label">等级:</span><span class="attr-value">{{ gameStore.currentRole.level }}</span></div>
-          <div class="attr-row"><span class="attr-label">经验:</span><span class="attr-value">{{ gameStore.currentRole.exp }} / {{ gameStore.currentRole._temp_UpLeverNeedExp || gameStore.currentRole.max_exp }}</span></div>
+          <div class="attr-row">
+            <span class="attr-label">经验:</span>
+            <span class="attr-value">{{ gameStore.currentExp }} / {{ gameStore.maxExp }}</span>
+          </div>
         </div>
 
         <div class="attr-section">
           <h3>状态 (Vitals)</h3>
           <div class="attr-row">
             <span class="attr-label">HP (生命):</span>
-            <span class="attr-value" style="color: #ff6b6b;">{{ gameStore.currentRole.hp }} / {{ gameStore.maxHp }}</span>
+            <span class="attr-value" style="color: #ff6b6b;">{{ Math.floor(gameStore.currentRole.hp) }} / {{ gameStore.maxHp }}</span>
           </div>
           <div class="attr-row">
             <span class="attr-label">MP (魔法):</span>
-            <span class="attr-value" style="color: #6b8eff;">{{ gameStore.currentRole.mp }} / {{ gameStore.maxMp }}</span>
+            <span class="attr-value" style="color: #6b8eff;">{{ Math.floor(gameStore.currentRole.mp) }} / {{ gameStore.maxMp }}</span>
           </div>
         </div>
 

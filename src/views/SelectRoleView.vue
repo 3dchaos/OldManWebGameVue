@@ -69,8 +69,20 @@ onMounted(() => {
   // 每次进入页面尝试刷新一次列表
   socketService.emit('message', { type: 'login', name: gameStore.username, password: '' })
   
+  // 监听角色控制响应
   socketService.on('rolecontrol', handleRoleControlResponse)
+  
+  // 监听通用响应（用于刷新角色列表）
+  socketService.on('response', handleResponse)
 })
+
+// 处理通用响应，主要用于刷新角色列表
+function handleResponse(data: any) {
+  if (data.type === 'login' && data.success && data.roleList) {
+    // 登录响应中包含角色列表，更新 store
+    gameStore.setRoleList(data.roleList)
+  }
+}
 
 function handleRoleControlResponse(data: any) {
   if (data.type === 'loginRole') {
@@ -85,6 +97,31 @@ function handleRoleControlResponse(data: any) {
         background: '#1a1a2e',
         color: '#fff'
       })
+    }
+  } else if (data.type === 'createRole') {
+    // 创建角色成功后刷新列表
+    if (data.success) {
+      // 延迟一下确保后端处理完成
+      setTimeout(() => {
+        socketService.emit('message', { 
+          type: 'login', 
+          name: gameStore.username, 
+          password: '' 
+        })
+      }, 300)
+    }
+  } else if (data.type === 'deleteRole') {
+    // 删除角色成功后刷新列表
+    if (data.success) {
+      selectedRoleId.value = null
+      // 延迟一下确保后端处理完成
+      setTimeout(() => {
+        socketService.emit('message', { 
+          type: 'login', 
+          name: gameStore.username, 
+          password: '' 
+        })
+      }, 300)
     }
   }
 }

@@ -17,7 +17,7 @@
         <p>⚠️ 本区域可能遭遇的怪物：</p>
         <div class="monsters-list">
           <span v-for="(monster, index) in gameStore.currentMap.encounterable_monsters" :key="index" class="monster-tag">
-            {{ monster.monster_name || monster.name }} (Lv.{{ monster.monster_level || monster.level }})
+            {{ monster.monster_name || (monster as any).name }} (Lv.{{ monster.monster_level || (monster as any).level }})
           </span>
         </div>
       </div>

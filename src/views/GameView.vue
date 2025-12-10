@@ -1,5 +1,9 @@
 <template>
   <div class="game-view">
+    <div class="connection-status" :class="{ connected: gameStore.isConnected }">
+      {{ gameStore.connectionStatus }}
+    </div>
+
     <div class="game-container">
       <div class="game-sidebar left-sidebar">
         <CharacterCard />
@@ -46,17 +50,28 @@ onMounted(() => {
     return
   }
 
+  // 核心修复：进入游戏界面时，重置战斗状态和传送状态，避免状态残留
+  gameStore.setBattleStatus(false)
+  gameStore.setTransferStatus(0)
+  // 清空遭遇的怪物列表
+  gameStore.encounteredMonsters = []
+
   if (!socketService.connected) socketService.connect()
 
-  // 初始化请求数据
+  // 重新获取最新的角色数据和地图数据，确保状态同步
   socketService.emit('rolecontrol', { type: 'getRoleData', roleId: gameStore.currentRoleId })
   socketService.emit('rolecontrol', { type: 'getCurrentMapData', roleId: gameStore.currentRoleId })
 })
 </script>
 
 <style scoped>
-/* 保持原有样式 */
-.game-view { min-height: 100vh; background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%); padding: 20px; }
+.game-view { min-height: 100vh; background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%); padding: 20px; position: relative; }
+.connection-status {
+  position: absolute; top: 10px; left: 10px; padding: 5px 10px; font-size: 12px;
+  opacity: 0.5; z-index: 100; color: #8a1c1c;
+}
+.connection-status.connected { color: #2d6b36; }
+
 .game-container { display: grid; grid-template-columns: 280px 1fr 280px; gap: 20px; max-width: 1800px; margin: 0 auto; min-height: calc(100vh - 40px); }
 .game-sidebar { display: flex; flex-direction: column; gap: 20px; }
 .game-stage { display: flex; flex-direction: column; background: var(--bg-panel); border: 1px solid #333; border-radius: 8px; overflow: hidden; }

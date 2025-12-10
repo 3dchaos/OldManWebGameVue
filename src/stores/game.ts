@@ -10,11 +10,14 @@ export interface Role {
   hp: number
   mp: number
   exp: number
+  // 兼容 ExpPoint 字段
+  ExpPoint?: number
   gold: number
   diamond: number
   // 后端返回的临时属性 (带 _temp 前缀)
   _temp_maxhp?: number
   _temp_maxmp?: number
+  _temp_UpLeverNeedExp?: number // 升级所需经验
   _temp_inMapName?: string
   _temp_inMapSafe?: number // 0 or 1
   _temp_ac_min?: number
@@ -40,7 +43,7 @@ export interface MapData {
   map_type: string
   is_safe?: number | boolean // 后端返回 0/1 或 true/false
   linked_maps: Array<{ map_id: string; map_name: string }>
-  encounterable_monsters?: Array<{ monster_name: string; monster_level: number }> // 修正字段名
+  encounterable_monsters?: Array<{ monster_name: string; monster_level: number }>
   roamSceneText?: string
 }
 
@@ -88,6 +91,16 @@ export const useGameStore = defineStore('game', () => {
   const maxMp = computed(() => {
     if (!currentRole.value) return 1
     return currentRole.value._temp_maxmp || currentRole.value.max_mp || 1
+  })
+
+  const currentExp = computed(() => {
+    if (!currentRole.value) return 0
+    return currentRole.value.ExpPoint ?? currentRole.value.exp ?? 0
+  })
+
+  const maxExp = computed(() => {
+    if (!currentRole.value) return 1
+    return currentRole.value._temp_UpLeverNeedExp || currentRole.value.max_exp || 1
   })
 
   const hpPercentage = computed(() => {
@@ -197,6 +210,8 @@ export const useGameStore = defineStore('game', () => {
     selectedRole,
     maxHp,
     maxMp,
+    currentExp,
+    maxExp,
     hpPercentage,
     mpPercentage,
     setConnected,

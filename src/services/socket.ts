@@ -4,7 +4,7 @@ import Swal from 'sweetalert2'
 
 class SocketService {
   private socket: Socket | null = null
-  private heartbeatTimer: NodeJS.Timeout | null = null
+  private heartbeatTimer: ReturnType<typeof setInterval> | null = null
   private pendingListeners: Array<{ event: string, callback: (...args: any[]) => void }> = []
 
   private get gameStore() {
@@ -115,17 +115,25 @@ class SocketService {
           background: '#1a1a2e',
           color: '#fff'
         })
+        // 核心修复：删除成功后，请求最新的角色列表
         this.emit('message', { type: 'login', name: this.gameStore.username, password: '' })
         break
 
       case 'loginRole':
         if (roleData) {
+          // 核心修复：登录角色时重置战斗状态和传送状态，避免状态残留
+          this.gameStore.setBattleStatus(false)
+          this.gameStore.setTransferStatus(0)
           this.gameStore.setCurrentRole(roleData)
           this.gameStore.addGameLog('进入游戏世界')
         }
         break
 
       case 'logoutRole':
+        // 核心修复：退出角色时重置所有游戏状态
+        this.gameStore.setBattleStatus(false)
+        this.gameStore.setTransferStatus(0)
+        this.gameStore.setCurrentMap(null)
         this.gameStore.setCurrentRole(null)
         this.gameStore.addGameLog('退出游戏世界')
         break
@@ -155,11 +163,32 @@ class SocketService {
 
       case 'completeTransfer':
         this.gameStore.setTransferStatus(0)
+        // 核心修复：传送完成后，强制退出战斗状态
+        this.gameStore.setBattleStatus(false)
         this.gameStore.addGameLog('传送完成')
-        if (mapData) this.gameStore.setCurrentMap(mapData)
+        
+        // 核心修复：优先使用返回的 mapData，如果没有则重新获取
+        if (mapData) {
+          this.gameStore.setCurrentMap(mapData)
+        }
+        
+        // 核心修复：传送完成后，重新获取角色数据和地图数据，确保安全区/危险区显示正确
+        // 使用 setTimeout 确保后端处理完成后再请求
+        if (this.gameStore.currentRoleId) {
+          setTimeout(() => {
+            this.emit('rolecontrol', { 
+              type: 'getRoleData', 
+              roleId: this.gameStore.currentRoleId 
+            })
+            this.emit('rolecontrol', { 
+              type: 'getCurrentMapData', 
+              roleId: this.gameStore.currentRoleId 
+            })
+          }, 200)
+        }
         break
 
-      case 'encounter': // [新增] 遭遇怪物
+      case 'encounter': 
         this.gameStore.setBattleStatus(true, monsters || [])
         this.gameStore.addGameLog('遭遇敌人！')
         break
