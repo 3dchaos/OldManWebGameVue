@@ -1,36 +1,32 @@
 import { io, Socket } from 'socket.io-client'
 import { useGameStore } from '@/stores/game'
+import Swal from 'sweetalert2'
 
 class SocketService {
   private socket: Socket | null = null
   private heartbeatTimer: NodeJS.Timeout | null = null
+  private pendingListeners: Array<{ event: string, callback: (...args: any[]) => void }> = []
 
-  // 延迟获取 store，避免在 Pinia 初始化前调用
   private get gameStore() {
     return useGameStore()
   }
 
   connect(url: string = 'http://localhost:5000') {
-    if (this.socket?.connected) {
-      return
-    }
+    if (this.socket?.connected) return
 
     this.socket = io(url, {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 1000,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 10,
     })
 
     this.setupEventHandlers()
     this.startHeartbeat()
     
-    // 在连接建立后注册待处理的监听器
     this.socket.on('connect', () => {
       this.pendingListeners.forEach(({ event, callback }) => {
-        if (this.socket) {
-          this.socket.on(event, callback)
-        }
+        this.socket?.on(event, callback)
       })
       this.pendingListeners = []
     })
@@ -47,7 +43,6 @@ class SocketService {
   private setupEventHandlers() {
     if (!this.socket) return
 
-    // 连接事件
     this.socket.on('connect', () => {
       console.log('Socket connected')
       this.gameStore.setConnected(true)
@@ -59,114 +54,130 @@ class SocketService {
     })
 
     this.socket.on('connection_status', (data: { status: string }) => {
-      if (data.status === 'connected') {
-        this.gameStore.setConnected(true)
+      if (data.status === 'connected') this.gameStore.setConnected(true)
+    })
+
+    this.socket.on('heartbeat_ack', () => {})
+
+    // 处理通用响应 (如登录/刷新列表)
+    this.socket.on('response', (data: any) => {
+      if (data.type === 'login' && data.success && data.roleList) {
+        console.log('Auto updating role list from socket response')
+        this.gameStore.setRoleList(data.roleList)
       }
     })
 
-    // 心跳响应
-    this.socket.on('heartbeat_ack', () => {
-      // 心跳确认，保持连接
-    })
-
-    // 账户操作响应 - 不在这里处理，让组件自己处理
-    // 组件可以通过 socketService.on('response', ...) 监听
-
-    // 角色控制响应
+    // 处理角色控制事件
     this.socket.on('rolecontrol', (data: any) => {
       this.handleRoleControl(data)
     })
   }
 
   private handleRoleControl(data: any) {
-    const { type, success, content, roleData, mapData, roleList } = data
+    const { type, success, content, roleData, mapData, monsters } = data
+
+    // 处理错误提示 (如果有)
+    if (!success && content) {
+      this.gameStore.addGameLog(`错误: ${content}`)
+      // 如果是在选择角色界面，显示弹窗
+      if (['createRole', 'deleteRole'].includes(type)) {
+        Swal.fire({
+          icon: 'error',
+          title: '操作失败',
+          text: content,
+          background: '#1a1a2e',
+          color: '#fff'
+        })
+      }
+      return
+    }
 
     switch (type) {
       case 'createRole':
-        if (success) {
-          this.gameStore.addGameLog('角色创建成功')
-          // 刷新角色列表
-          this.emit('message', { type: 'login', name: this.gameStore.username, password: '' })
-        } else {
-          this.gameStore.addGameLog(`创建失败: ${content}`)
-        }
+        Swal.fire({
+          icon: 'success',
+          title: '创建成功',
+          timer: 1500,
+          showConfirmButton: false,
+          background: '#1a1a2e',
+          color: '#fff'
+        })
+        // 刷新列表
+        this.emit('message', { type: 'login', name: this.gameStore.username, password: '' })
         break
 
       case 'deleteRole':
-        if (success) {
-          this.gameStore.addGameLog('角色删除成功')
-          // 刷新角色列表
-          this.emit('message', { type: 'login', name: this.gameStore.username, password: '' })
-        }
+        Swal.fire({
+          icon: 'success',
+          title: '删除成功',
+          timer: 1500,
+          showConfirmButton: false,
+          background: '#1a1a2e',
+          color: '#fff'
+        })
+        this.emit('message', { type: 'login', name: this.gameStore.username, password: '' })
         break
 
       case 'loginRole':
-        if (success && roleData) {
+        if (roleData) {
           this.gameStore.setCurrentRole(roleData)
           this.gameStore.addGameLog('进入游戏世界')
         }
         break
 
       case 'logoutRole':
-        if (success) {
-          this.gameStore.setCurrentRole(null)
-          this.gameStore.addGameLog('退出游戏世界')
-        }
+        this.gameStore.setCurrentRole(null)
+        this.gameStore.addGameLog('退出游戏世界')
         break
 
       case 'roleDataUpdate':
-        if (success && roleData) {
+        if (roleData) {
           this.gameStore.updateRoleData(roleData)
         }
         break
 
       case 'getCurrentMapData':
-        if (success && mapData) {
+        if (mapData) {
           this.gameStore.setCurrentMap(mapData)
         }
         break
 
       case 'getRoleData':
-        if (success && roleData) {
+        if (roleData) {
           this.gameStore.updateRoleData(roleData)
         }
         break
 
       case 'startTransfer':
-        if (success) {
-          this.gameStore.setTransferStatus(1, data.transferTime || 0, data.targetMapId)
-          this.gameStore.addGameLog(`开始传送到 ${data.targetMapName || ''}`)
-        }
+        this.gameStore.setTransferStatus(1, data.transfer_time || 3, data.target_map_id)
+        this.gameStore.addGameLog(`开始传送...`)
         break
 
       case 'completeTransfer':
-        if (success) {
-          this.gameStore.setTransferStatus(0)
-          this.gameStore.addGameLog('传送完成')
-        }
+        this.gameStore.setTransferStatus(0)
+        this.gameStore.addGameLog('传送完成')
+        if (mapData) this.gameStore.setCurrentMap(mapData)
+        break
+
+      case 'encounter': // [新增] 遭遇怪物
+        this.gameStore.setBattleStatus(true, monsters || [])
+        this.gameStore.addGameLog('遭遇敌人！')
         break
 
       case 'escapeFromBattle':
-        if (success) {
-          this.gameStore.setBattleStatus(false)
-          this.gameStore.addGameLog('成功逃离战斗')
-        }
+        this.gameStore.setBattleStatus(false)
+        this.gameStore.addGameLog('成功逃离战斗')
         break
-    }
-
-    if (content && !success) {
-      this.gameStore.addGameLog(`错误: ${content}`)
     }
   }
 
-  // 心跳机制
   private startHeartbeat() {
     this.stopHeartbeat()
     this.heartbeatTimer = setInterval(() => {
       if (this.socket?.connected) {
         this.emit('heartbeat', {})
       }
-    }, 25000) // 25秒发送一次心跳
+    }, 25000)
   }
 
   private stopHeartbeat() {
@@ -176,28 +187,20 @@ class SocketService {
     }
   }
 
-  // 发送消息
   emit(event: string, data: any) {
     if (this.socket?.connected) {
-      console.log('Emitting:', event, data)
       this.socket.emit(event, data)
-    } else {
-      console.warn('Socket not connected, cannot emit:', event, data)
     }
   }
 
-  // 监听事件
   on(event: string, callback: (...args: any[]) => void) {
     if (this.socket) {
-      // Socket 已连接，直接注册
       this.socket.on(event, callback)
     } else {
-      // Socket 未连接，保存监听器，连接后注册
       this.pendingListeners.push({ event, callback })
     }
   }
 
-  // 移除监听
   off(event: string, callback?: (...args: any[]) => void) {
     this.socket?.off(event, callback)
   }
@@ -208,4 +211,3 @@ class SocketService {
 }
 
 export const socketService = new SocketService()
-

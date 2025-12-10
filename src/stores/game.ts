@@ -8,29 +8,40 @@ export interface Role {
   role_gender: string
   level: number
   hp: number
-  max_hp: number
   mp: number
-  max_mp: number
   exp: number
-  max_exp: number
   gold: number
   diamond: number
-  dc: [number, number]
-  mc: [number, number]
-  sc: [number, number]
-  ac: [number, number]
-  mac: [number, number]
-  current_map_id?: string
-  current_map_name?: string
-  current_map_safe?: boolean
+  // 后端返回的临时属性 (带 _temp 前缀)
+  _temp_maxhp?: number
+  _temp_maxmp?: number
+  _temp_inMapName?: string
+  _temp_inMapSafe?: number // 0 or 1
+  _temp_ac_min?: number
+  _temp_ac_max?: number
+  _temp_mac_min?: number
+  _temp_mac_max?: number
+  _temp_dc_min?: number
+  _temp_dc_max?: number
+  _temp_mc_min?: number
+  _temp_mc_max?: number
+  _temp_sc_min?: number
+  _temp_sc_max?: number
+  // 兼容旧字段名 (可选)
+  max_hp?: number
+  max_mp?: number
+  max_exp?: number
+  slot?: number
 }
 
 export interface MapData {
   map_id: string
   map_name: string
   map_type: string
+  is_safe?: number | boolean // 后端返回 0/1 或 true/false
   linked_maps: Array<{ map_id: string; map_name: string }>
-  encounterable_monsters?: Array<{ name: string; level: number }>
+  encounterable_monsters?: Array<{ monster_name: string; monster_level: number }> // 修正字段名
+  roamSceneText?: string
 }
 
 export const useGameStore = defineStore('game', () => {
@@ -47,7 +58,6 @@ export const useGameStore = defineStore('game', () => {
   const currentRole = ref<Role | null>(null)
   const currentRoleId = ref<number | null>(null)
 
-
   // 地图数据
   const currentMap = ref<MapData | null>(null)
 
@@ -56,7 +66,7 @@ export const useGameStore = defineStore('game', () => {
   const encounteredMonsters = ref<any[]>([])
 
   // 传送状态
-  const transferStatus = ref(0) // 0: 无, 1: 传送中, 2: 传送完成
+  const transferStatus = ref(0)
   const transferTime = ref(0)
   const transferMapId = ref<string | null>(null)
 
@@ -69,14 +79,25 @@ export const useGameStore = defineStore('game', () => {
     return roleList.value.find(r => r.role_id === currentRoleId.value)
   })
 
+  // 修复：优先读取后端返回的 _temp_maxhp
+  const maxHp = computed(() => {
+    if (!currentRole.value) return 1
+    return currentRole.value._temp_maxhp || currentRole.value.max_hp || 1
+  })
+
+  const maxMp = computed(() => {
+    if (!currentRole.value) return 1
+    return currentRole.value._temp_maxmp || currentRole.value.max_mp || 1
+  })
+
   const hpPercentage = computed(() => {
     if (!currentRole.value) return 0
-    return (currentRole.value.hp / currentRole.value.max_hp) * 100
+    return Math.min(100, (currentRole.value.hp / maxHp.value) * 100)
   })
 
   const mpPercentage = computed(() => {
     if (!currentRole.value) return 0
-    return (currentRole.value.mp / currentRole.value.max_mp) * 100
+    return Math.min(100, (currentRole.value.mp / maxMp.value) * 100)
   })
 
   // Actions
@@ -97,7 +118,8 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function setRoleList(roles: Role[]) {
-    roleList.value = roles
+    // 过滤掉 null 值
+    roleList.value = roles.filter(r => r !== null)
   }
 
   function setCurrentRole(role: Role | null) {
@@ -131,8 +153,8 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function addGameLog(message: string) {
-    gameLogs.value.push(message)
-    // 限制日志数量
+    const time = new Date().toLocaleTimeString()
+    gameLogs.value.push(`[${time}] ${message}`)
     if (gameLogs.value.length > 100) {
       gameLogs.value.shift()
     }
@@ -141,7 +163,6 @@ export const useGameStore = defineStore('game', () => {
   function clearGameLogs() {
     gameLogs.value = []
   }
-
 
   function reset() {
     isLoggedIn.value = false
@@ -159,7 +180,6 @@ export const useGameStore = defineStore('game', () => {
   }
 
   return {
-    // State
     isConnected,
     connectionStatus,
     isLoggedIn,
@@ -174,11 +194,11 @@ export const useGameStore = defineStore('game', () => {
     transferTime,
     transferMapId,
     gameLogs,
-    // Computed
     selectedRole,
+    maxHp,
+    maxMp,
     hpPercentage,
     mpPercentage,
-    // Actions
     setConnected,
     setLoggedIn,
     setRoleList,
@@ -192,4 +212,3 @@ export const useGameStore = defineStore('game', () => {
     reset,
   }
 })
-

@@ -17,12 +17,13 @@ import { useGameStore } from '@/stores/game'
 
 const gameStore = useGameStore()
 
+// 定义事件
 const emit = defineEmits<{
-  showAttribute: []
+  (e: 'show-attribute'): void
 }>()
 
 function showAttributePanel() {
-  emit('showAttribute')
+  emit('show-attribute') // 发送事件
   gameStore.addGameLog('打开属性面板')
 }
 
@@ -36,28 +37,11 @@ function showSkills() {
 </script>
 
 <style scoped>
-.action-menu {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
+.action-menu { display: flex; flex-direction: column; gap: 10px; }
 .btn-menu {
-  width: 100%;
-  padding: 12px;
-  background: var(--bg-panel);
-  border: 1px solid #333;
-  color: var(--accent-gold);
-  border-radius: 4px;
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.2s;
-  font-size: 14px;
+  width: 100%; padding: 12px; background: var(--bg-panel); border: 1px solid #333;
+  color: var(--accent-gold); border-radius: 4px; cursor: pointer; text-align: left;
+  transition: all 0.2s; font-size: 14px;
 }
-
-.btn-menu:hover {
-  border-color: var(--accent-gold);
-  background: rgba(197, 160, 89, 0.1);
-}
+.btn-menu:hover { border-color: var(--accent-gold); background: rgba(197, 160, 89, 0.1); }
 </style>
-
